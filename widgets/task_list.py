@@ -1,12 +1,11 @@
-import os
-
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QListWidget,
                              QListWidgetItem, QPushButton, QLabel, QMessageBox,
                              QSpacerItem, QSizePolicy, QLineEdit)
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QFont, QColor, QIcon
+from PyQt5.QtGui import QFont, QColor, QPixmap, QIcon
 import requests
 from urllib.parse import urljoin
+import os
 
 
 class TaskListPage(QWidget):
@@ -16,8 +15,16 @@ class TaskListPage(QWidget):
         self.base_url = "http://127.0.0.1:8000/api/"
         self.current_page = 1
         self.per_page = 10
+        self.initialized = False  # 添加初始化标志
         self.init_ui()
-        self.load_tasks()
+        # 不再在这里调用load_tasks()
+
+    def showEvent(self, event):
+        """重写showEvent，只在页面显示时加载数据"""
+        super().showEvent(event)
+        if not self.initialized:
+            self.load_tasks()
+            self.initialized = True
 
     def init_ui(self):
         # 主布局
@@ -187,7 +194,7 @@ class TaskListPage(QWidget):
         """显示任务列表"""
         self.task_list.clear()
 
-        for task in tasks[:9]:  # 只显示前5个任务
+        for task in tasks[:10]:
             item = QListWidgetItem()
             item.setSizeHint(QSize(0, 90))  # 设置行高为90
 
@@ -269,32 +276,38 @@ class TaskListPage(QWidget):
     def on_task_selected(self, item):
         """任务项被选中"""
         task_id = item.data(Qt.UserRole)
-        status = ""
 
-        # 获取任务状态
-        for i in range(self.task_list.count()):
-            if self.task_list.item(i) == item:
-                widget = self.task_list.itemWidget(item)
-                if widget:
-                    status_label = widget.findChild(QLabel, "", Qt.FindDirectChildrenOnly)
-                    if status_label:
-                        status = status_label.text()
-                break
-        print(status)
-        # 根据状态处理
-        if status == "完成":
-            # 保存当前task_id到app，以便详情页使用
-            self.app.current_task_id = task_id
-            self.app.navigate_to(self.app.task_detail_page)
+        # 直接从item widget获取状态
+        widget = self.task_list.itemWidget(item)
+        if widget:
+            # 找到状态标签 - 现在我们知道它在第二个QLabel
+            status_label = None
+            for child in widget.findChildren(QLabel):
+                if child.text() in ["完成", "失败", "执行中", "排队中"]:
+                    status_label = child
+                    break
+
+            if status_label:
+                status = status_label.text()
+
+                # 根据状态处理
+                if status == "完成":
+                    # 保存当前task_id到app，以便详情页使用
+                    self.app.current_task_id = task_id
+                    self.app.navigate_to(self.app.task_detail_page)
+                else:
+                    message = {
+                        "执行中": "任务正在执行中，请等待完成",
+                        "排队中": "任务在排队中，请等待执行",
+                        "失败": "任务执行失败，无数据可用"
+                    }.get(status, "未知状态")
+
+                    QMessageBox.information(
+                        self,
+                        "提示",
+                        f"任务 {task_id}\n状态: {status}\n{message}"
+                    )
+            else:
+                QMessageBox.warning(self, "错误", "无法获取任务状态")
         else:
-            message = {
-                "执行中": "任务正在进行中，请等待完成",
-                "排队中": "任务在队列中，请等待执行",
-                "失败": "任务执行失败，无数据可用"
-            }.get(status, "未知状态")
-
-            QMessageBox.information(
-                self,
-                "提示",
-                f"任务 {task_id}\n状态: {status}\n{message}"
-            )
+            QMessageBox.warning(self, "错误", "无法获取任务信息")

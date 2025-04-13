@@ -15,6 +15,7 @@ class MainApp(QApplication):
         # 初始化用户信息
         self.user_info = None
         self.current_task_id = None
+        self.current_article = None
         # 主窗口设置
         self.main_window = QMainWindow()
         self.main_window.setWindowTitle("我的应用")
