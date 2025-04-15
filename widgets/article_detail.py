@@ -1,11 +1,12 @@
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                             QLabel, QScrollArea, QFrame, QMessageBox)
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QFont, QIcon, QPixmap
-import requests
-from urllib.parse import urljoin
-import os
+# article_detail.py
 
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QMessageBox, QLineEdit, \
+    QComboBox, QListWidget, QListWidgetItem, QGridLayout, QGroupBox, QCheckBox, QSizePolicy, QFrame
+from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtCore import Qt, QSize
+import os
+from urllib.parse import urljoin
+import requests
 
 class ArticleDetailPage(QWidget):
     def __init__(self, app):
@@ -120,6 +121,29 @@ class ArticleDetailPage(QWidget):
         self.meta_label.setStyleSheet("color: #666;")
         self.article_layout.addWidget(self.meta_label)
 
+        # 评分显示
+        self.rating_layout = QHBoxLayout()
+        self.rating_layout.setSpacing(5)  # 设置布局内控件的间距为 5 像素
+        self.rating_label = QLabel("评分:")
+        self.rating_label.setFont(QFont("Arial", 10))
+        self.rating_layout.addWidget(self.rating_label)
+
+        self.rating_stars = []
+        for i in range(5):
+            star = QLabel()
+            star.setPixmap(QIcon(os.path.join("imgs", "star_empty.png")).pixmap(20, 20))
+            # 确保没有样式表影响间距
+            star.setStyleSheet("padding: 0px; margin: 0px;")
+            star.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            self.rating_layout.addWidget(star)
+            self.rating_stars.append(star)
+        # ⭐ 用 QWidget 包起来
+        rating_container = QWidget()
+        rating_container.setLayout(self.rating_layout)
+
+        # ⭐ 然后用 addWidget + Qt.AlignLeft 添加
+        self.article_layout.addWidget(rating_container, alignment=Qt.AlignLeft)
+
         # 分隔线
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
@@ -193,6 +217,18 @@ class ArticleDetailPage(QWidget):
 
         # 显示内容 (使用简写后的内容)
         self.content_label.setText(article.get("content_summary", article.get("content", "无内容")))
+
+        # 显示评分
+        score = article.get("score", 0)
+        full_stars = int(score / 2)  # 每 2 分一个满星
+        half_star = score % 2 >= 1  # 是否有半星
+        for i in range(5):
+            if i < full_stars:
+                self.rating_stars[i].setPixmap(QIcon(os.path.join("imgs", "star_full.png")).pixmap(20, 20))
+            elif i == full_stars and half_star:
+                self.rating_stars[i].setPixmap(QIcon(os.path.join("imgs", "star_half.png")).pixmap(20, 20))
+            else:
+                self.rating_stars[i].setPixmap(QIcon(os.path.join("imgs", "star_empty.png")).pixmap(20, 20))
 
     def delete_article(self):
         """删除当前文章"""
