@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                             QLabel, QScrollArea, QFrame, QMessageBox)
+                             QLabel, QScrollArea, QFrame, QMessageBox, QSplitter)
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QFont
 import requests
@@ -9,7 +9,7 @@ import os
 from utils.path_tool import resource_path
 
 
-class TaskDetailPage(QWidget):
+class KeywordTaskDetailPage(QWidget):
     def __init__(self, app):
         super().__init__()
         self.app = app
@@ -71,8 +71,8 @@ class TaskDetailPage(QWidget):
                 border-radius: 4px;
             }
         """)
-        back_btn.clicked.connect(lambda: self.app.navigate_to(self.app.task_list_page))
-        back_btn.setToolTip("返回任务列表")
+        back_btn.clicked.connect(lambda: self.app.navigate_to(self.app.keyword_task_list_page))
+        back_btn.setToolTip("返回关键词任务列表")
 
         top_bar.addWidget(home_btn)
         top_bar.addWidget(back_btn)
@@ -86,17 +86,17 @@ class TaskDetailPage(QWidget):
 
         # 上一篇按钮
         self.prev_btn = QPushButton("上一篇")
-        self.prev_btn.setFixedSize(60, 30)
+        self.prev_btn.setFixedSize(80, 30)
         self.prev_btn.setStyleSheet("""
             QPushButton {
-                background-color: #4285f4;
+                background-color: #34a853;
                 color: white;
                 border: none;
                 border-radius: 4px;
                 font-size: 12px;
             }
             QPushButton:hover {
-                background-color: #3367d6;
+                background-color: #2d9248;
             }
             QPushButton:disabled {
                 background-color: #cccccc;
@@ -106,7 +106,7 @@ class TaskDetailPage(QWidget):
 
         # 删除按钮
         self.delete_btn = QPushButton("删除")
-        self.delete_btn.setFixedSize(60, 30)
+        self.delete_btn.setFixedSize(80, 30)
         self.delete_btn.setStyleSheet("""
             QPushButton {
                 background-color: #ea4335;
@@ -121,18 +121,42 @@ class TaskDetailPage(QWidget):
         """)
         self.delete_btn.clicked.connect(self.delete_current_article)
 
+        # 简报按钮
+        self.report_btn = QPushButton("查看简报")
+        self.report_btn.setFixedSize(100, 30)
+        self.report_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4285f4;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #3367d6;
+            }
+        """)
+        self.report_btn.clicked.connect(self.show_report)
+
         # 下一篇按钮
         self.next_btn = QPushButton("下一篇")
-        self.next_btn.setFixedSize(60, 30)
+        self.next_btn.setFixedSize(80, 30)
         self.next_btn.setStyleSheet(self.prev_btn.styleSheet())
         self.next_btn.clicked.connect(self.show_next_article)
 
         nav_buttons.addWidget(self.prev_btn)
         nav_buttons.addWidget(self.delete_btn)
+        nav_buttons.addWidget(self.report_btn)
         nav_buttons.addWidget(self.next_btn)
         main_layout.addLayout(nav_buttons)
 
-        # 文章内容区域
+        # 使用QSplitter创建左右分割视图
+        self.splitter = QSplitter(Qt.Horizontal)
+
+        # 左侧文章内容区域
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+
         self.article_scroll = QScrollArea()
         self.article_scroll.setWidgetResizable(True)
         self.article_scroll.setStyleSheet("""
@@ -155,6 +179,13 @@ class TaskDetailPage(QWidget):
         self.title_label.setFont(QFont("Arial", 14, QFont.Bold))
         self.title_label.setStyleSheet("color: #333;")
         self.article_layout.addWidget(self.title_label)
+
+        # 关键词标签
+        self.keyword_label = QLabel()
+        self.keyword_label.setWordWrap(True)
+        self.keyword_label.setFont(QFont("Arial", 10, QFont.Bold))
+        self.keyword_label.setStyleSheet("color: #34a853;")
+        self.article_layout.addWidget(self.keyword_label)
 
         # 来源和作者信息
         self.meta_label = QLabel()
@@ -181,48 +212,61 @@ class TaskDetailPage(QWidget):
         self.article_layout.addStretch()
 
         self.article_scroll.setWidget(self.article_container)
-        main_layout.addWidget(self.article_scroll)
+        left_layout.addWidget(self.article_scroll)
 
-        self.translate_btn = QPushButton("翻译文章")
-        self.translate_btn.setFixedSize(80, 30)
-        self.translate_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #fbbc05;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #e9ab00;
-            }
-        """)
-        self.translate_btn.clicked.connect(self.translate_current_article)
+        # 右侧简写内容区域
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
 
-        nav_buttons.addWidget(self.prev_btn)
-        nav_buttons.addWidget(self.delete_btn)
-        nav_buttons.addWidget(self.translate_btn)  # 添加翻译按钮
-        nav_buttons.addWidget(self.next_btn)
-
-        # 一键分类按钮
-        classify_btn = QPushButton("一键分类简写")
-        classify_btn.setFixedHeight(40)
-        classify_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #34a853;
-                color: white;
-                border: none;
+        self.summary_scroll = QScrollArea()
+        self.summary_scroll.setWidgetResizable(True)
+        self.summary_scroll.setStyleSheet("""
+            QScrollArea {
+                border: 1px solid #ddd;
                 border-radius: 5px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #2d9248;
+                background-color: white;
             }
         """)
-        classify_btn.clicked.connect(self.process_articles)
-        main_layout.addWidget(classify_btn)
 
+        # 简写内容容器
+        self.summary_container = QWidget()
+        self.summary_layout = QVBoxLayout(self.summary_container)
+        self.summary_layout.setContentsMargins(20, 20, 20, 20)
+        self.summary_layout.setSpacing(15)
+
+        # 简写标题
+        self.summary_title = QLabel("文章简写")
+        self.summary_title.setFont(QFont("Arial", 14, QFont.Bold))
+        self.summary_title.setStyleSheet("color: #333;")
+        self.summary_layout.addWidget(self.summary_title)
+
+        # 分隔线
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        separator.setStyleSheet("color: #eee;")
+        self.summary_layout.addWidget(separator)
+
+        # 简写内容
+        self.summary_content = QLabel()
+        self.summary_content.setWordWrap(True)
+        self.summary_content.setFont(QFont("Arial", 12))
+        self.summary_content.setStyleSheet("color: #444;")
+        self.summary_layout.addWidget(self.summary_content)
+
+        # 添加拉伸项
+        self.summary_layout.addStretch()
+
+        self.summary_scroll.setWidget(self.summary_container)
+        right_layout.addWidget(self.summary_scroll)
+
+        # 添加到分割器
+        self.splitter.addWidget(left_widget)
+        self.splitter.addWidget(right_widget)
+        self.splitter.setStretchFactor(0, 2)  # 左侧占2/3
+        self.splitter.setStretchFactor(1, 1)  # 右侧占1/3
+
+        main_layout.addWidget(self.splitter)
         self.setLayout(main_layout)
         self.update_nav_buttons()
 
@@ -239,7 +283,7 @@ class TaskDetailPage(QWidget):
             }
 
             response = requests.get(
-                urljoin(self.base_url, "get_articles/"),
+                urljoin(self.base_url, "get_keyword_articles/"),
                 params=params,
                 timeout=5
             )
@@ -269,6 +313,9 @@ class TaskDetailPage(QWidget):
         # 显示标题
         self.title_label.setText(article.get("title", "无标题"))
 
+        # 显示关键词
+        self.keyword_label.setText(f"关键词: {article.get('keyword', '无')}")
+
         # 显示元信息
         meta_parts = []
         if article.get("source_url"):
@@ -283,13 +330,18 @@ class TaskDetailPage(QWidget):
         # 显示内容
         self.content_label.setText(article.get("content", "无内容"))
 
+        # 显示简写内容
+        self.summary_content.setText(article.get("summary", "无简写内容"))
+
         self.update_nav_buttons()
 
     def clear_article_display(self):
         """清空文章显示"""
         self.title_label.setText("")
+        self.keyword_label.setText("")
         self.meta_label.setText("")
         self.content_label.setText("")
+        self.summary_content.setText("")
         self.update_nav_buttons()
 
     def update_nav_buttons(self):
@@ -298,6 +350,7 @@ class TaskDetailPage(QWidget):
         self.prev_btn.setDisabled(self.current_article_index <= 0 or not has_articles)
         self.next_btn.setDisabled(self.current_article_index >= len(self.articles) - 1 or not has_articles)
         self.delete_btn.setDisabled(not has_articles)
+        self.report_btn.setDisabled(not has_articles)
 
     def show_prev_article(self):
         """显示上一篇文章"""
@@ -320,7 +373,7 @@ class TaskDetailPage(QWidget):
 
         try:
             response = requests.delete(
-                urljoin(self.base_url, "delete_articles/"),
+                urljoin(self.base_url, "delete_keyword_articles/"),
                 json={
                     "article_ids": [article_id],
                     "user_id": self.app.user_info["userid"]
@@ -338,57 +391,29 @@ class TaskDetailPage(QWidget):
         except requests.exceptions.RequestException as e:
             QMessageBox.warning(self, "网络错误", f"无法连接到服务器: {str(e)}")
 
-    def process_articles(self):
-        """一键分类处理"""
+    def show_report(self):
+        """显示任务简报"""
         if not self.app.user_info or not self.app.current_task_id:
             QMessageBox.warning(self, "错误", "无法获取用户或任务信息")
             return
 
         try:
-            response = requests.post(
-                urljoin(self.base_url, "api/process-articles/"),
-                json={
+            # 获取任务简报
+            response = requests.get(
+                urljoin(self.base_url, "api/get_keyword_report/"),
+                params={
                     "user_id": self.app.user_info["userid"],
                     "task_id": self.app.current_task_id
                 },
-                timeout=30  # 处理可能需要更长时间
+                timeout=5
             )
 
             if response.status_code == 200:
-                result = response.json()
-                if "error" in result:
-                    QMessageBox.warning(self, "处理失败", result["error"])
-                else:
-                    QMessageBox.information(self, "成功", "文章分类处理完成")
+                data = response.json()
+                self.app.current_report = data.get("report", {})
+                self.app.navigate_to(self.app.keyword_report_page)
             else:
-                QMessageBox.warning(self, "错误", f"处理失败: {response.text}")
-
-        except requests.exceptions.RequestException as e:
-            QMessageBox.warning(self, "网络错误", f"无法连接到服务器: {str(e)}")
-
-    def translate_current_article(self):
-        """翻译当前文章"""
-        if not self.articles or self.current_article_index >= len(self.articles):
-            return
-
-        article_id = self.articles[self.current_article_index]["article_id"]
-
-        try:
-            response = requests.post(
-                urljoin(self.base_url, "api/translate-article/"),
-                json={
-                    "article_id": article_id,
-                    "user_id": self.app.user_info["userid"]
-                },
-                timeout=30
-            )
-
-            if response.status_code == 200:
-                QMessageBox.information(self, "成功", "文章翻译成功")
-                # 重新加载文章列表
-                self.load_articles()
-            else:
-                QMessageBox.warning(self, "错误", response.json().get("error", "翻译文章失败"))
+                QMessageBox.warning(self, "错误", response.json().get("error", "获取简报失败"))
 
         except requests.exceptions.RequestException as e:
             QMessageBox.warning(self, "网络错误", f"无法连接到服务器: {str(e)}")

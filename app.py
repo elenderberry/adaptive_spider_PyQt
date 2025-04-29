@@ -1,4 +1,8 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QStackedWidget
+
+from widgets.keyword_report import KeywordReportPage
+from widgets.keyword_task_detail import KeywordTaskDetailPage
+from widgets.keyword_task_list import KeywordTaskListPage
 from widgets.login import LoginPage
 from widgets.home import HomePage
 from widgets.task_list import TaskListPage
@@ -41,6 +45,9 @@ class MainApp(QApplication):
         self.article_list_page = ArticleListPage(self)
         self.article_detail_page = ArticleDetailPage(self)
         self.reader_page = ReaderPage(self)
+        self.keyword_task_list_page = KeywordTaskListPage(self)  # 新增
+        self.keyword_task_detail_page = KeywordTaskDetailPage(self)  # 新增
+        self.keyword_report_page = KeywordReportPage(self)  # 新增
 
         # 添加到堆栈
         self.pages.addWidget(self.login_page)
@@ -50,7 +57,12 @@ class MainApp(QApplication):
         self.pages.addWidget(self.article_list_page)
         self.pages.addWidget(self.article_detail_page)
         self.pages.addWidget(self.reader_page)
-
+        self.pages.addWidget(self.keyword_task_list_page)  # 新增
+        self.pages.addWidget(self.keyword_task_detail_page)  # 新增
+        self.pages.addWidget(self.keyword_report_page)  # 新增
     def navigate_to(self, page):
         """导航到指定页面"""
         self.pages.setCurrentWidget(page)
+        # 如果是文章列表页，强制刷新
+        if isinstance(page, ArticleListPage):
+            page.reload_articles()

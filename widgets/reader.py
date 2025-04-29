@@ -7,6 +7,9 @@ import requests
 from urllib.parse import urljoin
 import os
 
+from utils.path_tool import resource_path
+
+
 class WorkerThread(QThread):
     finished_signal = pyqtSignal(object)  # 成功信号
     error_signal = pyqtSignal(str)       # 错误信号
@@ -73,7 +76,7 @@ class ReaderPage(QWidget):
 
         # 返回首页按钮
         home_btn = QPushButton()
-        home_icon_path = os.path.join("imgs", "home.png")
+        home_icon_path = resource_path("imgs/home.png")
         if os.path.exists(home_icon_path):
             home_btn.setIcon(QIcon(home_icon_path))
             home_btn.setIconSize(QSize(24, 24))
@@ -161,7 +164,7 @@ class ReaderPage(QWidget):
         self.browser.urlChanged.connect(self.update_url_input)
 
         # 加载默认页面
-        self.browser.load(QUrl("https://www.google.com"))
+        self.browser.load(QUrl("https://www.baidu.com"))
 
         main_layout.addWidget(self.browser)
 

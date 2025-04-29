@@ -9,17 +9,15 @@ import os
 
 from utils.path_tool import resource_path
 
-
-class TaskListPage(QWidget):
+class KeywordTaskListPage(QWidget):
     def __init__(self, app):
         super().__init__()
         self.app = app
         self.base_url = "http://127.0.0.1:8000/api/"
         self.current_page = 1
         self.per_page = 10
-        self.initialized = False  # 添加初始化标志
+        self.initialized = False
         self.init_ui()
-        # 不再在这里调用load_tasks()
 
     def showEvent(self, event):
         """重写showEvent，只在页面显示时加载数据"""
@@ -58,19 +56,18 @@ class TaskListPage(QWidget):
         home_btn.setToolTip("返回首页")
 
         # 标题
-        title_label = QLabel("任务列表")
+        title_label = QLabel("关键词任务列表")
         title_label.setFont(QFont("Arial", 18, QFont.Bold))
 
         top_bar.addWidget(home_btn)
         top_bar.addWidget(title_label)
-        top_bar.addStretch()  # 将标题推到中间
-
+        top_bar.addStretch()
         main_layout.addLayout(top_bar)
 
         # 搜索栏
         search_layout = QHBoxLayout()
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("搜索任务...")
+        self.search_input.setPlaceholderText("搜索关键词任务...")
         self.search_input.setStyleSheet("""
             QLineEdit {
                 padding: 10px;
@@ -83,7 +80,7 @@ class TaskListPage(QWidget):
         search_btn = QPushButton("搜索")
         search_btn.setStyleSheet("""
             QPushButton {
-                background-color: #4285f4;
+                background-color: #34a853;
                 color: white;
                 padding: 10px 20px;
                 border: none;
@@ -91,7 +88,7 @@ class TaskListPage(QWidget):
                 font-size: 14px;
             }
             QPushButton:hover {
-                background-color: #3367d6;
+                background-color: #2d9248;
             }
         """)
         search_btn.clicked.connect(self.on_search)
@@ -158,9 +155,8 @@ class TaskListPage(QWidget):
 
         self.setLayout(main_layout)
 
-    # task_list.py 修改 load_tasks 方法
     def load_tasks(self):
-        """加载任务数据"""
+        """加载关键词任务数据"""
         if not self.app.user_info:
             QMessageBox.warning(self, "错误", "用户未登录")
             self.app.navigate_to(self.app.login_page)
@@ -173,7 +169,7 @@ class TaskListPage(QWidget):
             params = {
                 "page": self.current_page,
                 "per_page": self.per_page,
-                "task_target": "webpage"  # 只获取普通任务
+                "task_target": "keyword"  # 只获取关键词任务
             }
             if search:
                 params["search"] = search
@@ -198,7 +194,7 @@ class TaskListPage(QWidget):
         """显示任务列表"""
         self.task_list.clear()
 
-        for task in tasks[:10]:
+        for task in tasks[:10]:  # 只显示前10条
             item = QListWidgetItem()
             item.setSizeHint(QSize(0, 90))  # 设置行高为90
 
@@ -236,6 +232,14 @@ class TaskListPage(QWidget):
             top_layout.addStretch()
             top_layout.addWidget(status_label)
             layout.addLayout(top_layout)
+
+            # 关键词信息
+            if "config" in task and isinstance(task["config"], list) and len(task["config"]) > 0:
+                if "keyword" in task["config"][0]:
+                    keyword_label = QLabel(f"关键词: {task['config'][0]['keyword']}")
+                    keyword_label.setFont(QFont("Arial", 10))
+                    keyword_label.setStyleSheet("color: #666;")
+                    layout.addWidget(keyword_label)
 
             # 创建时间
             time_label = QLabel(f"创建时间: {task['created_at']}")
@@ -280,38 +284,5 @@ class TaskListPage(QWidget):
     def on_task_selected(self, item):
         """任务项被选中"""
         task_id = item.data(Qt.UserRole)
-
-        # 直接从item widget获取状态
-        widget = self.task_list.itemWidget(item)
-        if widget:
-            # 找到状态标签 - 现在我们知道它在第二个QLabel
-            status_label = None
-            for child in widget.findChildren(QLabel):
-                if child.text() in ["完成", "失败", "执行中", "排队中"]:
-                    status_label = child
-                    break
-
-            if status_label:
-                status = status_label.text()
-
-                # 根据状态处理
-                if status == "完成":
-                    # 保存当前task_id到app，以便详情页使用
-                    self.app.current_task_id = task_id
-                    self.app.navigate_to(self.app.task_detail_page)
-                else:
-                    message = {
-                        "执行中": "任务正在执行中，请等待完成",
-                        "排队中": "任务在排队中，请等待执行",
-                        "失败": "任务执行失败，无数据可用"
-                    }.get(status, "未知状态")
-
-                    QMessageBox.information(
-                        self,
-                        "提示",
-                        f"任务 {task_id}\n状态: {status}\n{message}"
-                    )
-            else:
-                QMessageBox.warning(self, "错误", "无法获取任务状态")
-        else:
-            QMessageBox.warning(self, "错误", "无法获取任务信息")
+        self.app.current_task_id = task_id
+        self.app.navigate_to(self.app.keyword_task_detail_page)

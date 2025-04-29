@@ -1,0 +1,1 @@
+from .path_tool import resource_path

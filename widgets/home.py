@@ -10,6 +10,7 @@ class HomePage(QWidget):
         self.app = app
         self.init_ui()
 
+    # home.py 修改 init_ui 方法
     def init_ui(self):
         # 主布局
         main_layout = QVBoxLayout()
@@ -21,23 +22,22 @@ class HomePage(QWidget):
         first_row.setSpacing(20)
         first_row.setAlignment(Qt.AlignCenter)
 
-        # 第二行按钮布局 (只包含一个按钮)
+        # 第二行按钮布局
         second_row = QHBoxLayout()
+        second_row.setSpacing(20)
         second_row.setAlignment(Qt.AlignCenter)
 
-        # 创建三个按钮
-        self.task_btn = self.create_button("任务查看", "#4285f4")
+        # 创建四个按钮
+        self.task_btn = self.create_button("普通任务", "#4285f4")
+        self.keyword_task_btn = self.create_button("关键词任务", "#34a853")  # 新增
         self.article_btn = self.create_button("文章查看", "white")
-        self.reader_btn = self.create_button("阅读器", "#4285f4")
+        self.reader_btn = self.create_button("阅读器", "#fbbc05")  # 更改颜色
 
         # 添加到布局
         first_row.addWidget(self.task_btn)
-        first_row.addWidget(self.article_btn)
-
-        # 第二行添加一个空白间隔使按钮居中
-        second_row.addSpacerItem(QSpacerItem(320, 0, QSizePolicy.Fixed, QSizePolicy.Minimum))
+        first_row.addWidget(self.keyword_task_btn)  # 新增
+        second_row.addWidget(self.article_btn)
         second_row.addWidget(self.reader_btn)
-        second_row.addSpacerItem(QSpacerItem(320, 0, QSizePolicy.Fixed, QSizePolicy.Minimum))
 
         # 将行布局添加到主布局
         main_layout.addLayout(first_row)
@@ -45,6 +45,7 @@ class HomePage(QWidget):
 
         # 连接点击事件
         self.task_btn.clicked.connect(lambda: self.app.navigate_to(self.app.task_list_page))
+        self.keyword_task_btn.clicked.connect(lambda: self.app.navigate_to(self.app.keyword_task_list_page))  # 新增
         self.article_btn.clicked.connect(lambda: self.app.navigate_to(self.app.article_list_page))
         self.reader_btn.clicked.connect(lambda: self.app.navigate_to(self.app.reader_page))
 

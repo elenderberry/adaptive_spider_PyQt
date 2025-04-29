@@ -9,6 +9,8 @@ import requests
 from urllib.parse import urljoin
 import os
 
+from utils.path_tool import resource_path
+
 
 class ArticleListPage(QWidget):
     def __init__(self, app):
@@ -40,7 +42,7 @@ class ArticleListPage(QWidget):
 
         # 返回首页按钮
         home_btn = QPushButton()
-        home_icon_path = os.path.join("imgs", "home.png")
+        home_icon_path = resource_path("imgs/home.png")
         if os.path.exists(home_icon_path):
             home_btn.setIcon(QIcon(home_icon_path))
             home_btn.setIconSize(QSize(32, 32))
@@ -130,6 +132,20 @@ class ArticleListPage(QWidget):
         self.sort_combo = QComboBox()
         self.sort_combo.addItem("更新时间", "updated_at")
         self.sort_combo.addItem("评分", "score")
+        # 排序方向
+        self.sort_order_combo = QComboBox()
+        self.sort_order_combo.addItem("降序（从高到低）", "desc")
+        self.sort_order_combo.addItem("升序（从低到高）", "asc")
+        self.sort_order_combo.setFont(QFont("Arial", 10))
+        self.sort_order_combo.setStyleSheet("""
+            QComboBox {
+                padding: 5px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                min-width: 140px;
+            }
+        """)
+        sort_group.addWidget(self.sort_order_combo)
         self.sort_combo.setCurrentIndex(0)
         self.sort_combo.setFont(QFont("Arial", 10))
         self.sort_combo.setStyleSheet("""
@@ -275,7 +291,10 @@ class ArticleListPage(QWidget):
         self.current_page = 1  # 重置为第一页
         self.sort_by = self.sort_combo.currentData()
         self.load_articles()  # 重新加载文章
-
+        # 若选择评分，自动设为降序
+        if self.sort_by == "score":
+            self.sort_order_combo.setCurrentIndex(0)  # 0 = "desc"
+        self.load_articles()
     def load_articles(self):
         """加载文章数据"""
         if not self.app.user_info:
@@ -294,7 +313,8 @@ class ArticleListPage(QWidget):
                 "category_names": selected_categories,
                 "page": self.current_page,
                 "per_page": self.per_page,
-                "sort_by": self.sort_by
+                "sort_by": self.sort_by,
+                "sort_order": self.sort_order_combo.currentData()
             }
 
             search_text = self.search_input.text().strip()
@@ -324,10 +344,8 @@ class ArticleListPage(QWidget):
         self.article_list.clear()
         self.articles = []
 
-        # 将分类文章合并为一个列表
-        for category, articles in articles_by_category.items():
+        for articles in articles_by_category.values():
             for article in articles:
-                article["category"] = category  # 添加分类信息
                 self.articles.append(article)
 
         # 显示当前页的文章
@@ -441,3 +459,8 @@ class ArticleListPage(QWidget):
         article_data = item.data(Qt.UserRole + 1)  # 获取保存的完整文章数据
         self.app.current_article = article_data
         self.app.navigate_to(self.app.article_detail_page)
+
+    def reload_articles(self):
+        """每次进入页面都加载"""
+        self.current_page = 1
+        self.load_articles()

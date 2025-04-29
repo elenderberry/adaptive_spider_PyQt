@@ -8,6 +8,9 @@ import os
 from urllib.parse import urljoin
 import requests
 
+from utils.path_tool import resource_path
+
+
 class ArticleDetailPage(QWidget):
     def __init__(self, app):
         super().__init__()
@@ -32,7 +35,7 @@ class ArticleDetailPage(QWidget):
 
         # 返回首页按钮
         home_btn = QPushButton()
-        home_icon_path = os.path.join("imgs", "home.png")
+        home_icon_path = resource_path("imgs/home.png")
         if os.path.exists(home_icon_path):
             home_btn.setIcon(QIcon(home_icon_path))
             home_btn.setIconSize(QSize(32, 32))
@@ -52,7 +55,7 @@ class ArticleDetailPage(QWidget):
 
         # 返回文章列表按钮
         back_btn = QPushButton()
-        back_icon_path = os.path.join("imgs", "back.png")
+        back_icon_path = resource_path("imgs/back.png")
         if os.path.exists(back_icon_path):
             back_btn.setIcon(QIcon(back_icon_path))
             back_btn.setIconSize(QSize(32, 32))
@@ -131,7 +134,7 @@ class ArticleDetailPage(QWidget):
         self.rating_stars = []
         for i in range(5):
             star = QLabel()
-            star.setPixmap(QIcon(os.path.join("imgs", "star_empty.png")).pixmap(20, 20))
+            star.setPixmap(QIcon(resource_path("imgs/star_empty.png")).pixmap(20, 20))
             # 确保没有样式表影响间距
             star.setStyleSheet("padding: 0px; margin: 0px;")
             star.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -224,11 +227,11 @@ class ArticleDetailPage(QWidget):
         half_star = score % 2 >= 1  # 是否有半星
         for i in range(5):
             if i < full_stars:
-                self.rating_stars[i].setPixmap(QIcon(os.path.join("imgs", "star_full.png")).pixmap(20, 20))
+                self.rating_stars[i].setPixmap(QIcon(resource_path("imgs/star_full.png")).pixmap(20, 20))
             elif i == full_stars and half_star:
-                self.rating_stars[i].setPixmap(QIcon(os.path.join("imgs", "star_half.png")).pixmap(20, 20))
+                self.rating_stars[i].setPixmap(QIcon(resource_path("imgs/star_half.png")).pixmap(20, 20))
             else:
-                self.rating_stars[i].setPixmap(QIcon(os.path.join("imgs", "star_empty.png")).pixmap(20, 20))
+                self.rating_stars[i].setPixmap(QIcon(resource_path("imgs/star_empty.png")).pixmap(20, 20))
 
     def delete_article(self):
         """删除当前文章"""

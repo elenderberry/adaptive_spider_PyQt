@@ -5,7 +5,7 @@ from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QSize
 import requests
 from urllib.parse import urljoin
-
+from utils.path_tool import resource_path
 
 class LoginPage(QWidget):
     def __init__(self, app):
@@ -35,7 +35,7 @@ class LoginPage(QWidget):
         container_layout.setSpacing(20)
 
         # 添加logo
-        logo_path = os.path.join("imgs", "logo.png")
+        logo_path = resource_path("imgs/logo.png")
         if os.path.exists(logo_path):
             logo_label = QLabel()
             pixmap = QPixmap(logo_path)
@@ -46,7 +46,7 @@ class LoginPage(QWidget):
         # 用户名输入框
         username_layout = QHBoxLayout()
         username_icon = QLabel()
-        username_icon.setPixmap(QPixmap(os.path.join("imgs", "user.png")).scaled(24, 24))
+        username_icon.setPixmap(QPixmap(resource_path("imgs/user.png")).scaled(24, 24))
         username_layout.addWidget(username_icon)
 
         self.username_input = QLineEdit()
@@ -65,7 +65,7 @@ class LoginPage(QWidget):
         # 密码输入框
         password_layout = QHBoxLayout()
         password_icon = QLabel()
-        password_icon.setPixmap(QPixmap(os.path.join("imgs", "password.png")).scaled(24, 24))
+        password_icon.setPixmap(QPixmap(resource_path("imgs/password.png")).scaled(24, 24))
         password_layout.addWidget(password_icon)
 
         self.password_input = QLineEdit()
@@ -160,6 +160,7 @@ class LoginPage(QWidget):
                     "username": data["username"]
                 }
                 # 跳转到首页
+                print('success')
                 self.app.navigate_to(self.app.home_page)
             else:
                 self.show_message(response.json().get("message", "登录失败"))
