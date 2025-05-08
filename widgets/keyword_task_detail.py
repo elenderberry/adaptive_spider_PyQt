@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                             QLabel, QScrollArea, QFrame, QMessageBox, QSplitter)
+                             QLabel, QScrollArea, QFrame, QMessageBox, QSplitter, QTextEdit)
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtGui import QIcon, QFont, QTextOption
 import requests
 from urllib.parse import urljoin
 import os
@@ -150,6 +150,9 @@ class KeywordTaskDetailPage(QWidget):
         nav_buttons.addWidget(self.next_btn)
         main_layout.addLayout(nav_buttons)
 
+        # 添加拉伸项，使按钮栏不会占用过多空间
+        main_layout.addStretch(1)
+
         # 使用QSplitter创建左右分割视图
         self.splitter = QSplitter(Qt.Horizontal)
 
@@ -202,8 +205,9 @@ class KeywordTaskDetailPage(QWidget):
         self.article_layout.addWidget(separator)
 
         # 文章内容
-        self.content_label = QLabel()
-        self.content_label.setWordWrap(True)
+        self.content_label = QTextEdit()
+        self.content_label.setReadOnly(True)
+        self.content_label.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
         self.content_label.setFont(QFont("Arial", 12))
         self.content_label.setStyleSheet("color: #444;")
         self.article_layout.addWidget(self.content_label)
@@ -265,10 +269,12 @@ class KeywordTaskDetailPage(QWidget):
         self.splitter.addWidget(right_widget)
         self.splitter.setStretchFactor(0, 2)  # 左侧占2/3
         self.splitter.setStretchFactor(1, 1)  # 右侧占1/3
+        self.splitter.setMinimumHeight(900)  # 设置分割器的最小高度
 
         main_layout.addWidget(self.splitter)
         self.setLayout(main_layout)
         self.update_nav_buttons()
+
 
     def load_articles(self):
         """加载任务下的文章"""
