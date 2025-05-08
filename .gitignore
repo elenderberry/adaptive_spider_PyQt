@@ -1,0 +1,10 @@
+# PyCharm
+.idea/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python
+*.egg-info/
+*.log
+*.sqlite3
